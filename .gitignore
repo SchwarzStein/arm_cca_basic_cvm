@@ -1,1 +1,5 @@
 /target
+/src/kernel/*.o
+/src/kernel/image-generator
+/src/kernel/*.bin
+/src/kernel/*.elf
