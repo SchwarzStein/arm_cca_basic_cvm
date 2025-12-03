@@ -1,5 +1,6 @@
 #include "defines.h"
 #include "common.h"
+#include "hypercall.h"
 #include "kernel.h"
 #include "heap.h"
 #include "vma.h"
@@ -8,6 +9,7 @@
 #include "psci.h"
 #include "rsi.h"
 #include "stdio.h"
+#include <stdint.h>
 
 extern char *_start;
 extern char *_sstack;
@@ -304,6 +306,12 @@ void debug_log_message(char *msg)
 	//kernel_debug_buffer[0]=1; 
 }
 
+int map_on_shared(uint64_t address, uint64_t range) {
+    uart_send_byte_array("\nVM: request map on shared space\n", 32);
+    uint64_t start_addr_pa = (uint64_t) get_physical_address(address);
+    uint64_t start_addr = start_addr_pa & ~get_shared_bit();
+    return (int) hvc_call(HCALL_MAP, start_addr, range, address, start_addr_pa, 0, 0);
+}
 
 void kernel_init()
 {
@@ -455,6 +463,32 @@ void kernel_main()
         //psci_version();
         rsi_host_call();
      //   psci_system_off();
+        uint8_t *print_buf = (uint8_t*)smalloc(0x1000);
+        if(!print_buf)
+            uart_send_byte_array("\nVM: failed to get sheap-print\n", 31);
+        else {
+            uint64_t _range = 0x2000;
+            uint8_t *_some_shared_address = (uint8_t*) smalloc(_range);
+            if(!_some_shared_address)
+                uart_send_byte_array("\nVM: failed to get sheap\n", 25);
+            else {
+                uint64_t range = 0x1000;
+                uint8_t *some_shared_address =
+                    (uint8_t*)PAGE_UP((uint64_t)_some_shared_address);
+                map_on_shared((uint64_t) some_shared_address, range);
+                uint8_t *some_private_address = (uint8_t*) kmalloc(range);
+                if(!some_private_address)
+                    uart_send_byte_array("\nVM: failed to get pheap\n", 25);
+                else {
+                    for(int i = 0; i < range; ++i)
+                        some_private_address[i] = some_shared_address[i];
+                    uart_send_byte_array("\nTest-1 mmap done\n", 18);
+		    for(int i = 0; i < 12; ++i)
+                        print_buf[i] = some_private_address[i];
+                    uart_send_byte_array(print_buf, range);
+                }
+            }
+        }
 	sys_execve(prog, argv, new_env);
 	uart_send_byte_array("\nexecuting scheduler\n",20);
 	schedule();	

@@ -32,6 +32,7 @@ hvc_hypercall_macro( write, HVC_WRITE)
 hvc_hypercall_macro( lseek, HVC_LSEEK)
 hvc_hypercall_macro( close, HVC_CLOSE)
 hvc_hypercall_macro( exit,  HVC_EXIT)
+hvc_hypercall_macro( map,   HVC_MAP)
 
 static char io_hc[] = "\ngoing to send address for syscall\n";
 uint64_t io_hypercall(  uint64_t hvc_code, uint64_t arg0, uint64_t arg1, uint64_t arg2,
@@ -79,6 +80,8 @@ uint64_t hvc_hypercall(  uint64_t hvc_code, uint64_t arg0, uint64_t arg1, uint64
 			return hypercall_close(arg0, arg1, arg1, arg3, arg4, arg5);
 		case HVC_EXIT:
 			return hypercall_exit(arg0, arg1, arg1, arg3, arg4, arg5);
+                case HVC_MAP:
+                        return hypercall_map(arg0, arg1, arg2, arg3, arg4, arg5);
 		default:
 			break;
 	}
