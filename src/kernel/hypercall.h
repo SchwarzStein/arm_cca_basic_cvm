@@ -10,6 +10,7 @@
 #define HCALL_LSEEK	(HVC_BASE | 4)
 #define HCALL_CLOSE	(HVC_BASE | 5)
 #define HCALL_EXIT	(HVC_BASE | 6)
+#define HCALL_MAP       (HVC_BASE | 7)
 
 #define HVC_OPEN	(HVC_BASE | 1)
 #define HVC_READ	(HVC_BASE | 2)
@@ -17,6 +18,7 @@
 #define HVC_LSEEK	(HVC_BASE | 4)
 #define HVC_CLOSE	(HVC_BASE | 5)
 #define HVC_EXIT	(HVC_BASE | 6)
+#define HVC_MAP 	(HVC_BASE | 7)
 
 #define HVC_SYSCALL_HV 0
 #define HVC_SYSCALL_IO 1

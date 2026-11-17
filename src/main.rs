@@ -7,8 +7,9 @@ use core::panic;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
+use std::os::fd::AsRawFd;
 
-use libc::EFD_NONBLOCK;
+use libc::{EFD_NONBLOCK, MAP_SHARED};
 use std::{slice, u32, u128};
 use nix::sched::{sched_setaffinity,sched_getcpu, CpuSet};
 use nix::unistd::Pid;
@@ -255,6 +256,7 @@ const HVC_WRITE: u64 = 0x8003;
 const HVC_LSEEK: u64 = 0x8004;
 const HVC_CLOSE: u64 = 0x8005;
 const HVC_EXIT: u64 = 0x8006;
+const HVC_MAP: u64 = 0x8007;
 
 const UART_SYS_BASE_ADDRESS: u64 = 0x9001000;
 const UART_SYS_DR_ADDRESS: u64 = UART_SYS_BASE_ADDRESS | 0x00;
@@ -1315,6 +1317,31 @@ fn handle_hypercall(address: u64) -> u64 {
             unsafe {
                 hvc_args[0] = libc::exit(hvc_args[2] as c_int) as u64;
             }
+            return hvc_args[1];
+        }
+        HVC_MAP => {
+            println!("VMM: Exit per mmap request.");
+            let test_file = "/home/realm/dummy.txt";
+            let addr = hvc_args[1];
+            let _addr = addr;
+            let range = hvc_args[2];
+            if addr < 0x4320_0000 && addr + range > 0x4340_0000 {
+                panic!("VMM: Map address is outside shared region.");
+            }
+            let dummy_file = std::fs::File::options()
+                .read(true)
+                .write(true)
+                .open(test_file)
+                .expect("VMM: Failed to open file.");
+            let map_addr = unsafe {
+                libc::mmap(addr as *mut libc::c_void,
+                    range.try_into().unwrap(),
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_FIXED | libc::MAP_SHARED | libc::MAP_POPULATE,
+                    dummy_file.as_raw_fd(), 0)
+            } as *mut u8;
+            assert_eq!(_addr, map_addr as u64, "Req-addr:{:#0x} - Recv-addr:{:#0x} - {:?}",
+                _addr, map_addr as u64, io::Error::last_os_error());
             return hvc_args[1];
         }
         _r => {
