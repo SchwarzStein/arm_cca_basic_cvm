@@ -18,9 +18,9 @@ KVM support.
 - `src/user/test.s` and `src/user/test.elf` — a small AArch64 user-mode test
   program used by the guest.
 
-The guest boots a fixed kernel image from `src/kernel/kernel_start.bin`. The
-kernel build creates this file; it is git-ignored and is not included in the
-repository.
+The guest currently boots a fixed kernel image from
+`src/kernel/kernel_start.bin`. The kernel build creates this file; it is
+git-ignored and is not included in the repository.
 
 ## Requirements
 
@@ -43,6 +43,15 @@ make build
 
 `make buildk` builds `src/kernel/kernel_start.bin`; `make build` builds the Rust
 VMM at `target/debug/arm-cca-example`.
+
+## QEMU Arm CCA development host
+
+The `build-image/` directory contains scripts for creating an Ubuntu guest on
+a QEMU Arm CCA platform, useful when a native CCA host is unavailable. Follow
+[`build-image/README.md`](build-image/README.md): run `./prebuild.sh -a`, start
+listeners on ports `54323` and `54324`, then launch with
+`./qemu_launch_host.sh`. Once connected to the guest, build and run this project
+using the commands above.
 
 ## Run
 
